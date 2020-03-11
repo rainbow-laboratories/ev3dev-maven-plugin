@@ -1,4 +1,5 @@
 # Ev3dev maven plugin.
+## Trying to implement the gradle plugin in maven
 [![Discord Chat](https://img.shields.io/discord/546438152869511178.svg)](https://discord.gg/Jqxe8Fa)  
 ### WIP
 
