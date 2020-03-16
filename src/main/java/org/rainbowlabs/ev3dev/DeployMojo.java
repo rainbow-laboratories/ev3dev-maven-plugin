@@ -25,20 +25,49 @@ public class DeployMojo extends AbstractMojo {
     @Parameter(property = "sshPassword")
     private String password;
 
+    @Parameter(property = "wrapperDir", defaultValue = "/home/robot")
+    private String wrapperDirectory;
+
     @Parameter(property = "javaDir", defaultValue = "/home/robot/java")
-    private String javaDestination;
+    private String javaDirectory;
+
+    @Parameter(property = "libraryDir", defaultValue = "/home/robot/java/libraries")
+    private String libraryDirectory;
+
+    @Parameter(property = "programDir", defaultValue = "/home/robot/java/programs")
+    private String programDirectory;
+
+    @Parameter(property = "splashDir", defaultValue = "/home/robot/java/splashes")
+    private String splashDirectory;
+
+    @Parameter(property = "opencvJar", defaultValue = "/usr/share/java/opencv.jar")
+    private String opencvJar;
+
+    @Parameter(property = "rxtxJar", defaultValue = "usr/share/java/RXTXcomm.jar")
+    private String rxtxJar;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
 
+        ChannelSftp sftp = null;
         try {
-            ChannelSftp sftp = setupSshConnection();
-            uploadJar(sftp);
+            sftp = setupSshConnection();
+
+            if (createDirectories(sftp)) {
+                deployDependencies(sftp);
+                deployJar(sftp);
+                deplyLauncher(sftp);
+            }
         } catch (JSchException e) {
             getLog().error("SSH session with brick failed. Maybe check your input.", e);
         } catch (SftpException e) {
             getLog().error("Uploading files failed", e);
+        } finally {
+            getLog().info("Closing sftp connection to the brick");
+            if (sftp != null && sftp.isConnected()) {
+                sftp.disconnect();
+            }
         }
-        getLog().info("Destination: " + javaDestination);
+        getLog().info("Destination: " + javaDirectory);
         getLog().info("CLASS: " + mainClass + " HOST: " + ipAddress + " USER: " + user + " PASS: " + password);
     }
 
@@ -51,7 +80,27 @@ public class DeployMojo extends AbstractMojo {
         return (ChannelSftp) session.openChannel("sftp");
     }
 
-    private void uploadJar(ChannelSftp sftp) throws SftpException {
-        sftp.put("target/*.jar", javaDestination);
+    private boolean createDirectories(ChannelSftp sftp) throws SftpException {
+        getLog().info("Creating directory structure on the ev3");
+        sftp.mkdir(wrapperDirectory);
+        sftp.mkdir(javaDirectory);
+        sftp.mkdir(splashDirectory);
+        sftp.mkdir(programDirectory);
+        sftp.mkdir(libraryDirectory);
+
+
+        return true;
+    }
+
+    private void deployDependencies(ChannelSftp sftp) throws SftpException {
+        sftp.put("target", libraryDirectory);
+    }
+
+    private void deployJar(ChannelSftp sftp) throws SftpException {
+        sftp.put("target/*.jar", javaDirectory);
+    }
+
+    private void deplyLauncher(ChannelSftp sftp) throws SftpException {
+        sftp.put("", wrapperDirectory);
     }
 }
