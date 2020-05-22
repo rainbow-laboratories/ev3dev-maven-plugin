@@ -1,6 +1,10 @@
 package org.rainbowlabs.ev3dev;
 
-import com.jcraft.jsch.*;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -10,8 +14,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 @Mojo(name = "deploy", defaultPhase = LifecyclePhase.INSTALL)
 public class DeployMojo extends AbstractMojo {
-
-
 
     @Parameter(property = "mainClass")
     private String mainClass;
@@ -81,7 +83,7 @@ public class DeployMojo extends AbstractMojo {
     }
 
     private boolean createDirectories(ChannelSftp sftp) throws SftpException {
-        getLog().info("Creating directory structure on the ev3");
+        getLog().info("Creating directory structure on the EV3");
         sftp.mkdir(wrapperDirectory);
         sftp.mkdir(javaDirectory);
         sftp.mkdir(splashDirectory);
@@ -93,14 +95,17 @@ public class DeployMojo extends AbstractMojo {
     }
 
     private void deployDependencies(ChannelSftp sftp) throws SftpException {
+        getLog().info("Uploading dependencies to the EV3");
         sftp.put("target", libraryDirectory);
     }
 
     private void deployJar(ChannelSftp sftp) throws SftpException {
+        getLog().info("Uploading application jar file to the EV3");
         sftp.put("target/*.jar", javaDirectory);
     }
 
     private void deplyLauncher(ChannelSftp sftp) throws SftpException {
+        getLog().info("Uploading launcher file to the EV3");
         sftp.put("", wrapperDirectory);
     }
 }
